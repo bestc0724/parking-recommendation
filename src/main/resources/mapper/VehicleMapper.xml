@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silenker.parkingrecommendation.mapper.VehicleMapper">
+
+    <resultMap id="vehicleResultMap" type="com.silenker.parkingrecommendation.model.entity.Vehicle">
+        <id property="vehicleId" column="vehicle_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="plateNumber" column="plate_number"/>
+        <result property="model" column="model"/>
+        <result property="vehicleHeight" column="vehicle_height"/>
+        <result property="isEv" column="is_ev"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="vehicleResultMap">
+        SELECT * FROM vehicles WHERE vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectByUserId" resultMap="vehicleResultMap">
+        SELECT * FROM vehicles WHERE user_id = #{userId} ORDER BY created_at
+    </select>
+
+    <insert id="insert" parameterType="com.silenker.parkingrecommendation.model.entity.Vehicle">
+        INSERT INTO vehicles (vehicle_id, user_id, plate_number, model, vehicle_height, is_ev)
+        VALUES (#{vehicleId}, #{userId}, #{plateNumber}, #{model}, #{vehicleHeight}, #{isEv})
+    </insert>
+
+</mapper>

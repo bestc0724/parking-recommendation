@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silenker.parkingrecommendation.mapper.AnalyticsMapper">
+
+    <!-- 按状态统计车位数量 -->
+    <select id="countByStatus" resultType="map">
+        SELECT status, COUNT(*) AS count
+        FROM parking_spots
+        GROUP BY status
+    </select>
+
+    <!-- 按车位类型 + 状态统计 -->
+    <select id="countByTypeAndStatus" resultType="map">
+        SELECT spot_type, status, COUNT(*) AS count
+        FROM parking_spots
+        GROUP BY spot_type, status
+        ORDER BY spot_type, status
+    </select>
+
+    <!-- 按天统计预约数量和预估收入（收入 = 预约时长 × 车位单价） -->
+    <select id="countReservationsByDay" resultType="map">
+        SELECT
+            DATE(r.reserved_at) AS date,
+            COUNT(*) AS count,
+            COALESCE(SUM(
+                TIMESTAMPDIFF(HOUR, r.reserved_at, COALESCE(r.expires_at, NOW())) * s.price_per_hour
+            ), 0) AS revenue
+        FROM reservations r
+        LEFT JOIN parking_spots s ON r.spot_id = s.spot_id
+        WHERE r.reserved_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(r.reserved_at)
+        ORDER BY date
+    </select>
+
+    <!-- 各状态预约总数 -->
+    <select id="countReservationsByStatus" resultType="map">
+        SELECT status, COUNT(*) AS count
+        FROM reservations
+        GROUP BY status
+    </select>
+
+</mapper>

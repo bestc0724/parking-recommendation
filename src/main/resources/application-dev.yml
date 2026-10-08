@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/parking_recommendation?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&defaultAuthenticationPlugin=mysql_native_password
+    username: parking
+    password: parking
+
+
+    hikari:
+      pool-name: Parking_HikariCP
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-test-query: SELECT 1
+
+# 内部 API 鉴权（Python Agent 调用 /api/internal/* 时需要携带）
+internal:
+  api-key: parking-internal-key-2024
+
+# AI API 配置,用的MIMO，可以换成你们自己的模型
+ai:
+  openai:
+    base-url: your-model
+    api-key: your-api-key
+
+# MyBatis 配置
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  config-location: classpath:/mybatis/config/mybatis-config.xml
+
+# 日志
+logging:
+  level:
+    root: info

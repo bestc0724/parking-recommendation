@@ -1,0 +1,7 @@
+# 密钥不进镜像，由 docker-compose 的 env_file 注入
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+eval/

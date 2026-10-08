@@ -1,0 +1,81 @@
+# AI 停车助手 — 全栈一键启动
+# 用法: docker compose up -d
+# 服务: mysql / redis / java-backend(:8080) / agent-service(:8001)
+# 说明: Qdrant 已部署在虚拟机 192.168.100.128:6333，默认使用外部实例；
+#       如需本地 Qdrant，取消下方 qdrant 服务的注释并把 QDRANT_HOST 改为 qdrant
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: parking-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: parking_recommendation
+      MYSQL_USER: parking
+      MYSQL_PASSWORD: parking
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 首次启动自动执行建表 + 种子数据（100 个车位 + 4 个用户）
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: parking-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 已有虚拟机 Qdrant (192.168.100.128:6333) 时保持注释。
+  # 如需本地副本: 取消注释，并把 agent-service 的 QDRANT_HOST 改为 qdrant
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   container_name: parking-qdrant
+  #   ports:
+  #     - "6333:6333"
+  #   volumes:
+  #     - qdrant_data:/qdrant/storage
+
+  java-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+    container_name: parking-java
+    environment:
+      # 覆盖数据源地址（容器内 host 为 mysql）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/parking_recommendation?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  agent-service:
+    build:
+      context: ./agent-service
+    container_name: parking-agent
+    env_file:
+      - agent-service/.env
+    environment:
+      JAVA_BACKEND_URL: http://java-backend:8080
+      # Redis 会话持久化（容器内 host 为 redis）
+      REDIS_URL: redis://redis:6379/0
+      # 外部 Qdrant（虚拟机实例）；用本地 qdrant 服务时改为 http://qdrant:6333
+      QDRANT_HOST: ${QDRANT_HOST:-192.168.100.128}
+    ports:
+      - "8001:8001"
+    depends_on:
+      - java-backend
+      - redis
+
+volumes:
+  mysql_data:
+  redis_data:
+  # qdrant_data:

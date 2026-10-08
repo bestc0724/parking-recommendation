@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "parking-assistant": {
+      "command": "python",
+      "args": ["F:/parking-recommendation/mcp-server/server.py"],
+      "env": {
+        "JAVA_BACKEND_URL": "http://localhost:8080",
+        "INTERNAL_API_KEY": "parking-internal-key-2024"
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+# Agent 框架
+langchain>=0.3
+langchain-openai>=0.2
+langchain-community>=0.3
+langgraph>=0.2
+
+# Web 服务
+fastapi>=0.115
+uvicorn>=0.32
+
+# HTTP 客户端（调用 Java 后端）
+httpx>=0.28
+
+# 向量数据库
+qdrant-client>=1.12
+
+# 会话存储（可选：Redis）
+redis>=5.0
+
+# 可观测性（可选：Langfuse）
+langfuse>=2.50
+
+# 数据处理
+pydantic>=2.0
+python-dotenv>=1.0
+
+# 测试
+pytest>=8.0
+
+# MCP 协议（可选，mcp-server 目录独立使用时需要）
+# mcp>=1.0

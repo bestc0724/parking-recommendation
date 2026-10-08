@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 停车助手</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-light: #818cf8; --primary-dark: #3730a3;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #3b82f6;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+            --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            --radius: 14px; --radius-sm: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 10px -2px rgba(0,0,0,0.04);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f2f5; color: var(--gray-800); line-height: 1.6; }
+
+        /* Auth */
+        .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; }
+        .auth-card { background: #fff; border-radius: 24px; padding: 44px; width: 100%; max-width: 440px; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.3); }
+        .auth-logo { text-align: center; margin-bottom: 36px; }
+        .auth-logo .icon { width: 72px; height: 72px; background: linear-gradient(135deg, var(--primary), #a78bfa); border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 16px; box-shadow: 0 8px 20px rgba(79,70,229,0.3); }
+        .auth-logo h2 { font-size: 26px; font-weight: 700; color: var(--gray-900); }
+        .auth-logo p { font-size: 14px; color: var(--gray-400); margin-top: 6px; }
+        .auth-tabs { display: flex; background: var(--gray-100); border-radius: 12px; padding: 4px; margin-bottom: 28px; }
+        .auth-tab { flex: 1; text-align: center; padding: 11px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--gray-400); border-radius: 10px; transition: all 0.25s; }
+        .auth-tab.active { background: #fff; color: var(--primary); box-shadow: var(--shadow); }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 7px; }
+        .form-group input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 14px; transition: all 0.2s; background: var(--gray-50); font-family: inherit; }
+        .form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); background: #fff; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 22px; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #7c3aed); color: #fff; width: 100%; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(79,70,229,0.4); transform: translateY(-1px); }
+        .msg { text-align: center; font-size: 13px; margin-top: 14px; min-height: 20px; }
+        .msg.error { color: var(--danger); }
+        .msg.success { color: var(--success); }
+
+        /* Header */
+        .app-header { background: #fff; border-bottom: 1px solid var(--gray-100); padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 8px rgba(0,0,0,0.04); }
+        .app-header .logo { display: flex; align-items: center; gap: 12px; }
+        .app-header .logo .icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), #a78bfa); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .app-header .logo h1 { font-size: 17px; font-weight: 700; }
+        .app-header .user-menu { display: flex; align-items: center; gap: 12px; }
+        .app-header .user-info { font-size: 13px; color: var(--gray-500); background: var(--gray-50); padding: 5px 12px; border-radius: 8px; }
+        .app-header .user-info b { color: var(--gray-800); }
+        .btn-logout { background: var(--gray-100); color: var(--gray-500); border: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-logout:hover { background: var(--gray-200); color: var(--gray-700); }
+
+        /* Nav */
+        .app-nav { background: #fff; border-bottom: 1px solid var(--gray-100); padding: 0 28px; display: flex; }
+        .nav-item { padding: 13px 20px; font-size: 13px; font-weight: 600; color: var(--gray-400); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.2s; }
+        .nav-item:hover { color: var(--gray-600); }
+        .nav-item.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* ===== Chat Layout ===== */
+        .chat-layout { display: flex; height: calc(100vh - 103px); }
+        .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .chat-sidebar { width: 280px; background: #fff; border-left: 1px solid var(--gray-100); padding: 20px; overflow-y: auto; flex-shrink: 0; }
+
+        /* Messages Area */
+        .messages-area { flex: 1; overflow-y: auto; padding: 24px; background: var(--gray-50); }
+        .messages-area::-webkit-scrollbar { width: 6px; }
+        .messages-area::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+
+        .msg-row { display: flex; gap: 10px; margin-bottom: 20px; animation: fadeIn 0.3s ease; }
+        .msg-row.user { flex-direction: row-reverse; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .msg-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .msg-row.bot .msg-avatar { background: linear-gradient(135deg, var(--primary), #a78bfa); }
+        .msg-row.user .msg-avatar { background: linear-gradient(135deg, var(--success), #34d399); }
+
+        .msg-bubble { max-width: 70%; padding: 14px 18px; border-radius: 16px; font-size: 14px; line-height: 1.7; word-break: break-word; white-space: pre-wrap; }
+        .msg-row.bot .msg-bubble { background: #fff; color: var(--gray-800); border: 1px solid var(--gray-100); border-top-left-radius: 4px; box-shadow: var(--shadow); }
+        .msg-row.user .msg-bubble { background: linear-gradient(135deg, var(--primary), #6366f1); color: #fff; border-top-right-radius: 4px; }
+
+        .msg-time { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+        .msg-row.user .msg-time { text-align: right; }
+
+        /* Typing Indicator */
+        .typing-indicator { display: flex; gap: 4px; padding: 8px 0; }
+        .typing-indicator span { width: 8px; height: 8px; background: var(--gray-300); border-radius: 50%; animation: bounce 1.4s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+
+        /* Intent Badge */
+        .intent-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-bottom: 6px; }
+        .intent-recommend { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .intent-service { background: rgba(16,185,129,0.1); color: var(--success); }
+        .intent-analytics { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .intent-chitchat { background: rgba(107,114,128,0.1); color: var(--gray-500); }
+
+        /* Agent Status Line (SSE 工具调用状态) */
+        .agent-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray-500); margin-bottom: 8px; padding: 6px 10px; background: rgba(79,70,229,0.04); border-radius: 8px; }
+        .agent-status .spinner { width: 12px; height: 12px; border-width: 2px; border-color: var(--gray-200); border-top-color: var(--primary); margin-right: 0; }
+        .agent-status.done { background: rgba(16,185,129,0.06); color: #059669; }
+
+        /* Input Area */
+        .input-area { padding: 16px 24px; background: #fff; border-top: 1px solid var(--gray-100); }
+        .input-row { display: flex; gap: 10px; align-items: flex-end; }
+        .input-row textarea { flex: 1; padding: 12px 16px; border: 1.5px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; font-family: inherit; resize: none; min-height: 46px; max-height: 120px; transition: all 0.2s; background: var(--gray-50); }
+        .input-row textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); background: #fff; }
+        .send-btn { width: 46px; height: 46px; border-radius: var(--radius); background: linear-gradient(135deg, var(--primary), #7c3aed); border: none; color: #fff; font-size: 20px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Quick Actions */
+        .quick-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .quick-btn { padding: 6px 14px; border: 1.5px solid var(--gray-200); border-radius: 20px; background: #fff; color: var(--gray-600); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .quick-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(79,70,229,0.03); }
+
+        /* Sidebar */
+        .sidebar-section { margin-bottom: 24px; }
+        .sidebar-title { font-size: 12px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .sidebar-card { background: var(--gray-50); border-radius: var(--radius-sm); padding: 14px; border: 1px solid var(--gray-100); margin-bottom: 10px; }
+        .sidebar-card .label { font-size: 11px; color: var(--gray-400); font-weight: 600; }
+        .sidebar-card .value { font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 2px; }
+        .sidebar-card .value.green { color: var(--success); }
+
+        /* Admin Page (reuse original styles) */
+        .app-main { max-width: 1040px; margin: 28px auto; padding: 0 20px; }
+        .card { background: #fff; border-radius: var(--radius); padding: 28px; margin-bottom: 22px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.04); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+        .card-title { font-size: 17px; font-weight: 700; color: var(--gray-900); display: flex; align-items: center; gap: 10px; }
+        .card-title .icon { width: 36px; height: 36px; background: linear-gradient(135deg, rgba(79,70,229,0.1), rgba(167,139,250,0.1)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border-radius: var(--radius-sm); padding: 18px; border: 1px solid var(--gray-100); text-align: center; }
+        .stat-card .num { font-size: 28px; font-weight: 800; color: var(--primary); }
+        .stat-card .lbl { font-size: 11px; color: var(--gray-400); margin-top: 4px; font-weight: 600; }
+        .stat-card.green .num { color: var(--success); }
+        .stat-card.red .num { color: var(--danger); }
+        .stat-card.yellow .num { color: var(--warning); }
+        .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--gray-100); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: var(--gray-50); color: var(--gray-500); font-weight: 600; padding: 14px 18px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 14px 18px; border-top: 1px solid var(--gray-50); }
+        tr:hover td { background: rgba(79,70,229,0.02); }
+        .status { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .status-available { background: rgba(16,185,129,0.1); color: #059669; }
+        .status-occupied { background: rgba(239,68,68,0.1); color: #dc2626; }
+        .status-reserved { background: rgba(245,158,11,0.1); color: #d97706; }
+        .status-maintenance { background: rgba(107,114,128,0.1); color: var(--gray-600); }
+        .status-pending { background: rgba(245,158,11,0.1); color: #d97706; }
+        .status-confirmed { background: rgba(16,185,129,0.1); color: #059669; }
+        .status-cancelled { background: rgba(107,114,128,0.1); color: var(--gray-600); }
+        .status-expired { background: rgba(239,68,68,0.1); color: #dc2626; }
+        .btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--gray-200); }
+        .btn-outline:hover { border-color: var(--primary); background: rgba(79,70,229,0.03); }
+        .btn-sm { padding: 7px 16px; font-size: 12px; border-radius: 8px; }
+        .btn-success { background: linear-gradient(135deg, var(--success), #059669); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, var(--danger), #dc2626); color: #fff; }
+        .form-row { display: flex; gap: 14px; }
+        .form-row .form-group { flex: 1; }
+        .form-group select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; background: var(--gray-50); }
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--gray-400); }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+        .toast { position: fixed; top: 80px; right: 24px; background: #fff; border-radius: var(--radius-sm); padding: 16px 24px; box-shadow: var(--shadow-lg); border-left: 4px solid var(--success); z-index: 100; font-size: 14px; font-weight: 500; animation: slideIn 0.3s ease; }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .output-msg { padding: 14px 18px; border-radius: var(--radius-sm); margin-top: 16px; font-size: 13px; font-weight: 500; }
+        .output-msg.success { background: rgba(16,185,129,0.08); color: #065f46; border: 1px solid rgba(16,185,129,0.15); }
+        .output-msg.error { background: rgba(239,68,68,0.06); color: #991b1b; border: 1px solid rgba(239,68,68,0.15); }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; }
+        .spinner.dark { border-color: var(--gray-200); border-top-color: var(--primary); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn + .btn { margin-left: 8px; }
+
+        /* Welcome */
+        .welcome-card { text-align: center; padding: 40px 20px; }
+        .welcome-card .icon { font-size: 48px; margin-bottom: 16px; }
+        .welcome-card h3 { font-size: 18px; font-weight: 700; color: var(--gray-800); margin-bottom: 8px; }
+        .welcome-card p { font-size: 14px; color: var(--gray-400); }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div v-if="toast.show" class="toast" :class="toast.type">{{ toast.msg }}</div>
+
+    <!-- Auth Page -->
+    <div v-if="!user" class="auth-page">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="icon">🅿️</div>
+                <h2>AI 停车助手</h2>
+                <p>智能 Agent · 多轮对话 · 一键停车</p>
+            </div>
+            <div class="auth-tabs">
+                <div class="auth-tab" :class="{active: authTab==='login'}" @click="authTab='login'">登录</div>
+                <div class="auth-tab" :class="{active: authTab==='register'}" @click="authTab='register'">注册</div>
+            </div>
+            <div v-if="authTab==='login'">
+                <div class="form-group"><label>用户名</label><input v-model="loginForm.username" placeholder="请输入用户名" @keyup.enter="doLogin"></div>
+                <div class="form-group"><label>密码</label><input v-model="loginForm.password" type="password" placeholder="请输入密码" @keyup.enter="doLogin"></div>
+                <button class="btn btn-primary" @click="doLogin"><span v-if="loginLoading" class="spinner"></span>登 录</button>
+                <div class="msg" :class="loginMsg.type">{{ loginMsg.text }}</div>
+            </div>
+            <div v-if="authTab==='register'">
+                <div class="form-group"><label>用户名</label><input v-model="regForm.username" placeholder="请输入用户名"></div>
+                <div class="form-group"><label>密码</label><input v-model="regForm.password" type="password" placeholder="请输入密码"></div>
+                <button class="btn btn-primary" @click="doRegister">注 册</button>
+                <div class="msg" :class="regMsg.type">{{ regMsg.text }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App -->
+    <div v-else>
+        <header class="app-header">
+            <div class="logo"><div class="icon">🅿️</div><h1>AI 停车助手</h1></div>
+            <div class="user-menu">
+                <span class="user-info"><b>{{ user.username }}</b></span>
+                <button class="btn-logout" @click="logout">退出</button>
+            </div>
+        </header>
+        <nav class="app-nav">
+            <div class="nav-item" :class="{active: page==='chat'}" @click="page='chat'">💬 智能对话</div>
+            <div class="nav-item" v-if="user.role==='admin'" :class="{active: page==='admin'}" @click="page='admin'; loadSpots(); loadConflicts()">⚙️ 管理端</div>
+        </nav>
+
+        <!-- ===== Chat Page ===== -->
+        <div v-if="page==='chat'" class="chat-layout">
+            <div class="chat-main">
+                <div class="messages-area" ref="messagesArea">
+                    <div v-if="!messages.length" class="welcome-card">
+                        <div class="icon">🤖</div>
+                        <h3>你好！我是智能停车助手</h3>
+                        <p>我可以帮你推荐车位、预约车位、查询预约状态，或者回答停车场相关问题。<br>直接用自然语言告诉我你的需求吧！</p>
+                    </div>
+                    <div v-for="m in messages" :key="m.id" class="msg-row" :class="m.role">
+                        <div class="msg-avatar">{{ m.role === 'bot' ? '🤖' : '👤' }}</div>
+                        <div>
+                            <div v-if="m.role==='bot' && m.intent" class="intent-badge" :class="'intent-'+m.intent">{{ intentLabel(m.intent) }}</div>
+                            <div v-if="m.role==='bot' && m.status" class="agent-status" :class="{done: m.statusDone}">
+                                <span v-if="!m.statusDone" class="spinner"></span>
+                                {{ m.status }}
+                            </div>
+                            <div class="msg-bubble" v-if="m.text">{{ m.text }}</div>
+                            <div class="msg-time">{{ m.time }}</div>
+                        </div>
+                    </div>
+                    <div v-if="agentTyping" class="msg-row bot">
+                        <div class="msg-avatar">🤖</div>
+                        <div class="msg-bubble">
+                            <div class="typing-indicator"><span></span><span></span><span></span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <div class="input-row">
+                        <textarea v-model="inputText" placeholder="输入消息...（如：帮我找个有充电桩的车位）" @keydown.enter.exact.prevent="sendMessage" rows="1" ref="inputBox"></textarea>
+                        <button class="send-btn" @click="sendMessage" :disabled="agentTyping || !inputText.trim()">➤</button>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-btn" @click="quickMsg('帮我停车')">🅿️ 帮我停车</button>
+                        <button class="quick-btn" @click="quickMsg('查看可用车位')">📋 可用车位</button>
+                        <button class="quick-btn" @click="quickMsg('我的预约和订单')">🧾 预约订单</button>
+                        <button class="quick-btn" @click="quickMsg('我要离场结算')">🚪 离场结算</button>
+                        <button class="quick-btn" @click="quickMsg('晚上7点去有位置吗')">🔮 需求预测</button>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">📊 实时状态</div>
+                    <div class="sidebar-card">
+                        <div class="label">可用车位</div>
+                        <div class="value green">{{ sidebarStats.available ?? '-' }}</div>
+                    </div>
+                    <div class="sidebar-card">
+                        <div class="label">总车位数</div>
+                        <div class="value">{{ sidebarStats.total ?? '-' }}</div>
+                    </div>
+                    <div class="sidebar-card">
+                        <div class="label">占用率</div>
+                        <div class="value">{{ sidebarStats.occupancyRate != null ? sidebarStats.occupancyRate + '%' : '-' }}</div>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">👤 当前用户</div>
+                    <div class="sidebar-card">
+                        <div class="label">用户名</div>
+                        <div class="value" style="font-size:16px;">{{ user.username }}</div>
+                    </div>
+                    <div class="sidebar-card">
+                        <div class="label">用户ID</div>
+                        <div class="value" style="font-size:12px; color:var(--gray-500);">{{ user.userId }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Admin Page ===== -->
+        <main v-if="page==='admin'" class="app-main">
+            <div class="stats-row">
+                <div class="stat-card"><div class="num">{{ spots.length }}</div><div class="lbl">总车位数</div></div>
+                <div class="stat-card green"><div class="num">{{ spots.filter(s=>s.status==='available').length }}</div><div class="lbl">可用车位</div></div>
+                <div class="stat-card yellow"><div class="num">{{ spots.filter(s=>s.status==='reserved').length }}</div><div class="lbl">已预约</div></div>
+                <div class="stat-card red"><div class="num">{{ spots.filter(s=>s.status==='occupied'||s.status==='maintenance').length }}</div><div class="lbl">占用/维护</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><div class="card-title"><span class="icon">🅿️</span>车位状态管理</div><button class="btn btn-outline btn-sm" @click="loadSpots">🔄 刷新</button></div>
+                <div class="table-wrap"><table><tr><th>车位ID</th><th>限高</th><th>充电桩</th><th>类型</th><th>距电梯</th><th>价格</th><th>状态</th></tr>
+                    <tr v-for="s in spots" :key="s.spotId"><td><b>{{ s.spotId }}</b></td><td>{{ s.heightLimit }}m</td><td>{{ s.hasCharging ? '✅' : '❌' }}</td><td>{{ s.spotType }}</td><td>{{ s.distanceToElevator }}m</td><td>¥{{ s.pricePerHour }}/时</td><td><span class="status" :class="'status-'+s.status">{{ s.status }}</span></td></tr>
+                </table></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><div class="card-title"><span class="icon">⚠️</span>待处理预约</div><button class="btn btn-outline btn-sm" @click="loadConflicts">🔄 刷新</button></div>
+                <div v-if="!conflicts.length" class="empty-state" style="padding:32px;"><div class="icon">✅</div><p>暂无待处理预约</p></div>
+                <div v-else class="table-wrap"><table><tr><th>预约ID</th><th>车位</th><th>用户</th><th>过期时间</th><th>操作</th></tr>
+                    <tr v-for="c in conflicts" :key="c.reservationId"><td><b>{{ c.reservationId }}</b></td><td>{{ c.spotId }}</td><td>{{ c.userId }}</td><td>{{ formatTime(c.expiresAt) }}</td><td><button class="btn btn-danger btn-sm" @click="resolveConflict(c.reservationId)">处理</button></td></tr>
+                </table></div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, nextTick, onMounted } = Vue;
+
+const AGENT_URL = 'http://localhost:8001';
+const JAVA_URL = '';
+
+createApp({
+    setup() {
+        const user = ref(null);
+        const authTab = ref('login');
+        const page = ref('chat');
+        const messages = ref([]);
+        const inputText = ref('');
+        const agentTyping = ref(false);
+        const messagesArea = ref(null);
+        const inputBox = ref(null);
+        const spots = ref([]);
+        const conflicts = ref([]);
+        const sidebarStats = reactive({ total: null, available: null, occupancyRate: null });
+
+        const toast = reactive({ show: false, msg: '', type: 'success' });
+        const loginForm = reactive({ username: '', password: '' });
+        const regForm = reactive({ username: '', password: '' });
+        const loginMsg = reactive({ text: '', type: '' });
+        const regMsg = reactive({ text: '', type: '' });
+        const loginLoading = ref(false);
+
+        let msgIdCounter = 0;
+        const sessionId = 'session_' + Date.now();
+
+        function showToast(msg, type = 'success') { toast.show = true; toast.msg = msg; toast.type = type; setTimeout(() => toast.show = false, 3000); }
+        function formatTime(t) { if (!t) return '—'; return t.replace('T', ' ').substring(0, 16); }
+        function now() { return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }); }
+
+        function intentLabel(i) { return { recommend: '🎯 推荐', service: '🔧 服务', analytics: '📊 数据', chitchat: '💬 闲聊' }[i] || i; }
+
+        function scrollToBottom() {
+            nextTick(() => { if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight; });
+        }
+
+        function addMessage(role, text, intent) {
+            messages.value.push({ id: ++msgIdCounter, role, text, intent, time: now() });
+            scrollToBottom();
+        }
+
+        async function api(method, path, body) {
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(path, opts);
+            return res.json();
+        }
+
+        // Auth
+        async function doLogin() {
+            loginMsg.text = '';
+            if (!loginForm.username || !loginForm.password) { loginMsg.text = '请输入用户名和密码'; loginMsg.type = 'error'; return; }
+            loginLoading.value = true;
+            try {
+                const data = await api('POST', JAVA_URL + '/api/driver/login', loginForm);
+                user.value = data;
+                loadSidebarStats();
+            } catch (e) { loginMsg.text = e.error || '登录失败'; loginMsg.type = 'error'; }
+            finally { loginLoading.value = false; }
+        }
+        async function doRegister() {
+            regMsg.text = '';
+            if (!regForm.username || !regForm.password) { regMsg.text = '请输入用户名和密码'; regMsg.type = 'error'; return; }
+            try {
+                await api('POST', JAVA_URL + '/api/driver/register', { username: regForm.username, password: regForm.password });
+                regMsg.text = '注册成功！请登录'; regMsg.type = 'success';
+                setTimeout(() => authTab.value = 'login', 1200);
+            } catch (e) { regMsg.text = e.error || '注册失败'; regMsg.type = 'error'; }
+        }
+        function logout() { user.value = null; messages.value = []; }
+
+        // Chat — SSE 流式对话
+        const STATUS_TEXT = {
+            router: '🤔 正在理解您的意图...',
+            recommend: '🎯 推荐 Agent 已接管',
+            service: '🔧 服务 Agent 已接管',
+            analytics: '📊 分析 Agent 已接管',
+            chitchat: '💬 正在回复...',
+        };
+        const TOOL_STATUS = {
+            recommend_spot: '🅿️ 正在为您查询推荐车位...',
+            query_available_spots: '📋 正在查询可用车位...',
+            reserve_spot: '📝 正在为您预约车位...',
+            confirm_arrival: '✅ 正在确认到场...',
+            cancel_reservation: '🗑️ 正在取消预约...',
+            query_my_reservations: '📋 正在查询您的预约...',
+            query_knowledge_base: '📚 正在检索停车场知识库...',
+            get_occupancy_stats: '📊 正在统计占用率...',
+            get_revenue_report: '💰 正在统计收入...',
+            checkout_order: '🧾 正在结算停车费用...',
+            pay_order: '💳 正在处理支付...',
+            query_my_orders: '🧾 正在查询停车订单...',
+            add_vehicle: '🚗 正在添加车辆档案...',
+            query_my_vehicles: '🚗 正在查询您的车辆...',
+            predict_occupancy: '🔮 正在预测车位需求...',
+        };
+
+        async function sendMessage() {
+            const text = inputText.value.trim();
+            if (!text || agentTyping.value) return;
+            inputText.value = '';
+            addMessage('user', text);
+            agentTyping.value = true;
+
+            // 创建一个流式 bot 消息占位
+            const botMsg = { id: ++msgIdCounter, role: 'bot', text: '', intent: '', status: '🤔 正在理解您的意图...', statusDone: false, time: now() };
+            messages.value.push(botMsg);
+            scrollToBottom();
+
+            try {
+                const response = await fetch(AGENT_URL + '/agent/chat/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, user_id: user.value.userId, message: text }),
+                });
+
+                if (!response.ok || !response.body) throw new Error('HTTP ' + response.status);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let streamedTokens = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        let evt;
+                        try { evt = JSON.parse(line.slice(6)); } catch (e) { continue; }
+
+                        switch (evt.type) {
+                            case 'node_start':
+                                botMsg.status = STATUS_TEXT[evt.node] || '⏳ 处理中...';
+                                botMsg.statusDone = false;
+                                break;
+                            case 'tool_start':
+                                botMsg.status = TOOL_STATUS[evt.tool] || ('🔧 正在调用工具: ' + evt.tool);
+                                botMsg.statusDone = false;
+                                break;
+                            case 'token':
+                                streamedTokens += evt.content;
+                                botMsg.text = streamedTokens;
+                                scrollToBottom();
+                                break;
+                            case 'done':
+                                botMsg.text = evt.reply || streamedTokens;
+                                botMsg.intent = evt.intent;
+                                botMsg.status = '✅ 已完成';
+                                botMsg.statusDone = true;
+                                break;
+                            case 'error':
+                                botMsg.text = evt.message || '处理出错';
+                                botMsg.status = '❌ 出错了';
+                                botMsg.statusDone = true;
+                                break;
+                        }
+                        scrollToBottom();
+                    }
+                }
+
+                // 兜底：流结束但没有 done 事件
+                if (!botMsg.statusDone) {
+                    botMsg.statusDone = true;
+                    if (!botMsg.text) botMsg.text = '抱歉，暂时无法回复。';
+                }
+                loadSidebarStats();
+            } catch (e) {
+                botMsg.text = '⚠️ 无法连接到 Agent 服务，请确认 Python Agent 已启动 (端口 8001)。\n\n你可以先启动 Agent 服务：cd agent-service && python main.py';
+                botMsg.status = '❌ 连接失败';
+                botMsg.statusDone = true;
+            } finally {
+                agentTyping.value = false;
+            }
+        }
+
+        function quickMsg(text) {
+            inputText.value = text;
+            sendMessage();
+        }
+
+        // Sidebar stats — 通过 Agent 服务代理（内部密钥不出浏览器）
+        async function loadSidebarStats() {
+            try {
+                const data = await fetch(AGENT_URL + '/agent/stats').then(r => r.json());
+                sidebarStats.total = data.totalSpots;
+                sidebarStats.available = data.available;
+                sidebarStats.occupancyRate = data.occupancyRate;
+            } catch (e) {
+                sidebarStats.total = null; sidebarStats.available = null; sidebarStats.occupancyRate = null;
+            }
+        }
+
+        // Admin
+        async function loadSpots() { try { spots.value = await api('GET', JAVA_URL + '/api/admin/spots'); } catch (e) {} }
+        async function loadConflicts() { try { conflicts.value = await api('GET', JAVA_URL + '/api/admin/conflicts'); } catch (e) {} }
+        async function resolveConflict(id) { if (!confirm('确认处理该预约？')) return; try { await api('POST', JAVA_URL + `/api/admin/conflicts/${id}/resolve`); showToast('已处理'); loadConflicts(); loadSpots(); } catch (e) { showToast('处理失败', 'error'); } }
+
+        return {
+            user, authTab, page, messages, inputText, agentTyping, messagesArea, inputBox,
+            spots, conflicts, sidebarStats, toast, loginForm, regForm, loginMsg, regMsg, loginLoading,
+            doLogin, doRegister, logout, sendMessage, quickMsg, loadSidebarStats,
+            loadSpots, loadConflicts, resolveConflict, intentLabel, formatTime, showToast
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+target/
+*.zip
+*.log
+hs_err_pid*.log
+agent-service/
+mcp-server/
+docs/
+.git/

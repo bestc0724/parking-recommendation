@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: parking-recommendation
+  profiles:
+    active: dev

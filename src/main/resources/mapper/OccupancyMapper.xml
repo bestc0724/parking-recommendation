@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silenker.parkingrecommendation.mapper.OccupancyMapper">
+
+    <resultMap id="snapshotResultMap" type="com.silenker.parkingrecommendation.model.entity.OccupancySnapshot">
+        <id property="id" column="id"/>
+        <result property="snapshotTime" column="snapshot_time"/>
+        <result property="availableCount" column="available_count"/>
+        <result property="totalCount" column="total_count"/>
+        <result property="occupancyRate" column="occupancy_rate"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.silenker.parkingrecommendation.model.entity.OccupancySnapshot"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO occupancy_snapshots (snapshot_time, available_count, total_count, occupancy_rate)
+        VALUES (#{snapshotTime}, #{availableCount}, #{totalCount}, #{occupancyRate})
+    </insert>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM occupancy_snapshots
+    </select>
+
+    <select id="selectAll" resultMap="snapshotResultMap">
+        SELECT * FROM occupancy_snapshots ORDER BY snapshot_time
+    </select>
+
+</mapper>
